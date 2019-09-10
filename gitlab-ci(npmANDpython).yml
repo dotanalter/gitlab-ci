@@ -1,0 +1,51 @@
+stages:
+    - build
+    - test
+
+install_dependencies:
+    stage: build
+    cache:
+        paths:
+            - fe\node_modules
+    before_script:
+        - Remove-Item -Path fe\build -Force -Recurse
+        - git remote set-url origin http://${GIT_CI_USER}:${GIT_CI_PASS}@${GIT_PATH}.git
+        - git config --global user.email 'example@gmail.com'
+        - git config --global user.name 'Dotan&Elad'
+        - git checkout master
+        - git reset --hard origin/master
+    script:
+        - cd fe
+        - npm install
+        - npm run-script build
+        - New-Item build\txt.txt
+        - Set-Content build\txt.txt 'Welcome to TutorialsPoint'
+        - git add --all
+        - git commit -m "gitlab runner push"
+        - git remote -v
+        - git push origin master
+    only:
+        changes:
+            - fe/*
+    artifacts:
+        paths:
+            - fe\build
+    tags:
+        - build
+
+image: "python:3.7"
+
+before_script:
+  - python --version
+  - pip install -r requirements.txt
+        
+flake8:
+  stage: Static Analysis
+  script:
+  - flake8 --max-line-length=120 bild/*.py
+
+pylint:
+  stage: Static Analysis
+  allow_failure: true
+  script:
+  - pylint -d C0301 bild/*.py
